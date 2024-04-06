@@ -37,19 +37,61 @@ function App() {
         }));
     };
 
-    const handleStatusChange = (value, index) => {
+    const handleStatusChange = (value, index: number) => {
+        console.log(value);
+        console.log(index);
+        console.log(failures);
 
+        setFailures(failures.map((item, indexx) => indexx === index ? { ...item, status: value } : item));
+        console.log(failures);
     };
+
+    const handleDelete = (index: number) => {
+        console.log(index);
+
+        setFailures(x => x.filter((item, indexx) => indexx !== index));
+    }
+
+    const handleDescriptionChange = (newDesc: string, index: number) => {
+        console.log(index);
+        console.log(newDesc);
+
+        setFailures(failures.map((item, indexx) => indexx === index ? { ...item, repairDescription: newDesc } : item));
+    }
+
+    const handleDateChange = (newDate: Date, index: number) => {
+        const potentialDate = new Date(newDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        console.log(newDate);
+        console.log(today);
+
+        if (potentialDate <= today) {
+            alert("Szacowana data musi byc pozniejsza niz dzisiejsza data.");
+            return;
+        }
+
+        setFailures(failures.map((item, indexx) => indexx === index ? { ...item, potentialDate: newDate } : item));
+    }
+
+    const handlePriceChange = (newPrice: number, index: number) => {
+        if (isNaN(newPrice) || newPrice < 0) {
+            alert("Szacowany koszt musi byc liczba wieksza niz 0.");
+            return;
+        }
+
+        setFailures(failures.map((item, indexx) => indexx === index ? { ...item, potentialPrice: newPrice } : item));
+    }
 
     const addFailure = () => {
 
         if (newFailure.name.trim().length < 3 || newFailure.failureType.trim().length < 3) {
-            alert("Nazwa urz¹dzenia i rodzaj awarii musz¹ zawieraæ co najmniej 3 znaki.");
+            alert("Nazwa urzadzenia i rodzaj awarii musza zawierac co najmniej 3 znaki.");
             return;
         }
 
         if (isNaN(newFailure.potentialPrice) || newFailure.potentialPrice <= 0) {
-            alert("Szacowany koszt musi byæ liczb¹ wiêksz¹ ni¿ 0.");
+            alert("Szacowany koszt musi byc liczba wieksza niz 0.");
             return;
         }
 
@@ -57,7 +99,7 @@ function App() {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         if (potentialDate <= today) {
-            alert("Szacowana data musi byæ póŸniejsza ni¿ dzisiejsza data.");
+            alert("Szacowana data musi byc pozniejsza niz dzisiejsza data.");
             return;
         }
 
@@ -109,7 +151,14 @@ function App() {
                     <h2>Lista usterek</h2>
                     <ul className="failure-items">
                         {failures.map((failure, index) => (
-                            <Report Failure={failure} Index={index} handleStatusChange={handleStatusChange}></Report>
+                            <Report Failure={failure}
+                                Index={index}
+                                handleStatusChange={handleStatusChange}
+                                handleDelete={handleDelete}
+                                handleDescriptionChange={handleDescriptionChange}
+                                handleDateChange={handleDateChange}
+                                handlePriceChange={handlePriceChange}>
+                            </Report>
                         ))}
                     </ul>
                 </div>
