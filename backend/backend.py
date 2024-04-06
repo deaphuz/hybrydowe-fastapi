@@ -2,28 +2,40 @@ from fastapi import FastAPI
 from fastapi import status, HTTPException
 from pymongo import MongoClient
 from typing import List
-from model import *
+
+import model
+from model import Failure
+
+mongo_uri = "mongodb://localhost:27017"
+database_name = "failures_db"
+
+# Connect to MongoDB
 
 
 app = FastAPI()
-client = MongoClient()
-def get_connection_to_document_database():
- database = client['failures']
- return database
+client = MongoClient(mongo_uri)
+database = client[database_name]
 
-@app.get("/auto")
-async def get_auto(auto_id):
- db = get_connection_to_document_database()
- failure = db.offers.find_one({'auto_id': auto_id})
+
+# def get_connection_to_document_database():
+# database = client['failures']
+# return database
+
+# db = get_connection_to_document_database("mongodb://localhost:27017")
+
+@app.get("/failures")
+async def get_failure(failure_id):
+ failure = db.failures.find_one({'failure_id': failure_id})
  if failure is None:
- raise HTTPException(
- status_code=status.HTTP_404_NOT_FOUND,
- detail=f'Car with id = {auto_id} was not found'
+     raise HTTPException(
+     status_code=status.HTTP_404_NOT_FOUND,
+     detail=f'Failure with id = {failure_id} was not found'
  )
- return car
+ return failure
 
 @app.get('/failures', response_model=List[Failure])
 async def get_failures():
+    failures = await db.failures.find().to_list(length=None)
     return failures
 
 @app.post('/failures', response_model=Failure)
@@ -56,18 +68,18 @@ def delete_failure(name: str):
     raise HTTPException(status_code=404, detail="Failure not found")
 
 @app.post("/auto")
-async def modyi(id, failure: Failure):
- db = get_connection_to_document_database()
- car_query = {"id": id}
- car_values = {"$set": {
- "id": car.id,
- "name": car.name,
- "mark": car.mark,
- "production_year": car.production_year,
- "price": car.price
- }}
- db.offers.update_one(car_query, car_values)
- return car
+async def modify(id, failure: Failure):
+    db = get_connection_to_document_database()
+    car_query = {"id": id}
+    car_values = {"$set": {
+    "id": car.id,
+    "name": car.name,
+    "mark": car.mark,
+    "production_year": car.production_year,
+    "price": car.price
+    }}
+    db.offers.update_one(car_query, car_values)
+    return car
 
 
 
