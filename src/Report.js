@@ -1,34 +1,53 @@
 import React, { useState, useEffect } from 'react';
+import axios from 'axios'; 
 
 function Report({ Failure, Index, handleStatusChange, handleDelete, handleDescriptionChange, handlePriceChange, handleDateChange }) {
     const [editIndex, setEditIndex] = useState(null);
     const [editedFailure, setEditedFailure] = useState({
+        name: '',
+        failureType: '',
         potentialPrice: '',
         potentialDate: '',
+        status: '',
         repairDescription: '',
-        status: ''
+        date: ''
     });
 
     useEffect(() => {
         setEditedFailure({
+            name: Failure.name,
+            failureType: Failure.failureType,
             potentialPrice: Failure.potentialPrice,
             potentialDate: Failure.potentialDate,
-            repairDescription: Failure.repairDescription
+            status: Failure.status,
+            repairDescription: Failure.repairDescription,
+            date: Failure.date
         });
     }, [Failure]);
 
     const handleEdit = (index) => {
         setEditIndex(index);
         setEditedFailure({
+            name: Failure.name,
+            failureType: Failure.failureType,
             potentialPrice: Failure.potentialPrice,
             potentialDate: Failure.potentialDate,
+            status: Failure.status,
             repairDescription: Failure.repairDescription,
-            status: Failure.status
+            date: Failure.date
         });
     };
 
-    const saveEditedData = (index) => {
-        setEditIndex(null);
+    const saveEditedData = async (index) => {
+        try {
+            console.log(editedFailure);
+            const { name } = Failure;
+            await axios.put(`/failures/${encodeURIComponent(name)}`, editedFailure);
+            setEditIndex(null);
+            handleStatusChange(editedFailure.status, index);
+        } catch (error) {
+            console.error('Error saving edited failure:', error);
+        }
     };
 
     const onStatusChange = (newValue: string, index: number) => {
@@ -36,10 +55,13 @@ function Report({ Failure, Index, handleStatusChange, handleDelete, handleDescri
         console.log(index);
 
         setEditedFailure({
+            name: Failure.name,
+            failureType: Failure.failureType,
             potentialPrice: Failure.potentialPrice,
             potentialDate: Failure.potentialDate,
+            status: newValue,
             repairDescription: Failure.repairDescription,
-            status: newValue
+            date: Failure.date
         });
 
         handleStatusChange(newValue, index);

@@ -1,10 +1,10 @@
 from pydantic import BaseModel
 
 class Failure(BaseModel):
-    failure_type: str
+    failureType: str
     name: str
     date: str
-    potential_price: float
-    potential_date: str
+    potentialPrice: float
+    potentialDate: str
     status: str
-    repair_description: str
+    repairDescription: str

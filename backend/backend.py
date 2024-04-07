@@ -10,19 +10,9 @@ mongo_uri = "mongodb://localhost:27017"
 database_name = "failures_db"
 
 # Connect to MongoDB
-
-
 app = FastAPI()
 client = MongoClient(mongo_uri)
 database = client[database_name]
-
-
-# def get_connection_to_document_database():
-# database = client['failures']
-# return database
-
-# db = get_connection_to_document_database("mongodb://localhost:27017")
-
 
 @app.post('/failures/', response_model=Failure)
 def create_failure(failure: Failure):
@@ -30,20 +20,12 @@ def create_failure(failure: Failure):
     database.failures.insert_one(failure_dict)
     return failure
 
-@app.post("/failures/{name}")
-async def modify_failure(name: str, updated_failure: Failure):
-    failure = database.failures.find_one({"name": name})
-    if failure:
-        database.failures.update_one({"name": name}, {"$set": updated_failure.model_dump()})
-        return updated_failure
-    raise HTTPException(status_code=404, detail="Failure not found")
 
 @app.put('/failures/{name}', response_model=Failure)
 def update_failure(name: str, updated_failure: Failure):
     failure = database.failures.find_one({"name": name})
     if failure:
-        failure.status = updated_failure.status
-        failure.repair_description = updated_failure.repair_description
+        database.failures.update_one({"name": name}, {"$set": updated_failure.model_dump()})
         return failure
     raise HTTPException(status_code=404, detail="Failure not found")
 
@@ -70,10 +52,10 @@ def get_failure(name: str):
     raise HTTPException(status_code=404, detail="Failure not found")
 
 @app.delete('/failures/{name}', response_model=dict)
-async def delete_failure(name: str):
-    failures = await database.failures.find().to_list(length=None)
-    for f in failures:
-        if f.name == name:
-            failures.remove(f)
-            return {"message": "Failure deleted successfully"}
-    raise HTTPException(status_code=404, detail="Failure not found")
+def delete_failure(name: str):
+    failure = database.failures.find_one({"name": name})
+    if failure:
+        database.failures.delete_one({"name": name})
+        return {"message": "Failure deleted successfully"}
+    else:
+        raise HTTPException(status_code=404, detail="Failure not found")

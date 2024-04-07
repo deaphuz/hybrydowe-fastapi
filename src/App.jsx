@@ -4,7 +4,9 @@ import Report from './Report.js';
 import axios from 'axios'; 
 
 
+
 function App() {
+
     const [failures, setFailures] = useState([]);
     const [newFailure, setNewFailure] = useState({
         name: '',
@@ -12,7 +14,8 @@ function App() {
         potentialPrice: '',
         potentialDate: '',
         status: 'NEW',
-        repairDescription: ''
+        repairDescription: '',
+        date: ''
     });
 
     useEffect(() => {
@@ -21,7 +24,7 @@ function App() {
 
     const fetchFailures = async () => {
         try {
-            const response = await axios.get('http://localhost:8000/failures/');
+            const response = await axios.get('/failures/');
             setFailures(response.data);
         } catch (error) {
             console.error('Error fetching failures:', error);
@@ -54,13 +57,15 @@ function App() {
         setFailures([...failures, newFailureEntry]);
 
         try {
-            await axios.post('http://localhost:8000/failures/', newFailure);
+            await axios.post('/failures/', newFailure);
             setNewFailure({
                 name: '',
+                failureType: '',
                 potentialPrice: '',
                 potentialDate: '',
                 status: 'NEW',
-                repairDescription: ''
+                repairDescription: '',
+                date: ''
             });
             fetchFailures();
         } catch (error) {
@@ -85,11 +90,26 @@ function App() {
         console.log(failures);
     };
 
-    const handleDelete = (index: number) => {
-        console.log(index);
+    const handleDelete = async (id, index) => {
+        try {
+            const failureToDelete = failures[id];
+            console.log('ID:', id);
+            console.log(failures);
+            console.log(failureToDelete);
+            if (!failureToDelete) {
+                console.error('Failure not found');
+                return;
+            }
 
-        setFailures(x => x.filter((item, indexx) => indexx !== index));
-    }
+            const { name } = failureToDelete;
+            await axios.delete(`/failures/${encodeURIComponent(name)}`);
+            
+            setFailures(prevFailures => prevFailures.filter((_, i) => i !== index));
+            fetchFailures();
+        } catch (error) {
+            console.error('Error deleting failure:', error);
+        }
+    };
 
     const handleDescriptionChange = (newDesc: string, index: number) => {
         console.log(index);
