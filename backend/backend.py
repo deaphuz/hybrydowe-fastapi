@@ -23,9 +23,33 @@ database = client[database_name]
 
 # db = get_connection_to_document_database("mongodb://localhost:27017")
 
+
+@app.post('/failures/', response_model=Failure)
+def create_failure(failure: Failure):
+    failure_dict = failure.model_dump()
+    database.failures.insert_one(failure_dict)
+    return failure
+
+@app.post("/failures/{name}")
+async def modify_failure(name: str, updated_failure: Failure):
+    failure = database.failures.find_one({"name": name})
+    if failure:
+        database.failures.update_one({"name": name}, {"$set": updated_failure.model_dump()})
+        return updated_failure
+    raise HTTPException(status_code=404, detail="Failure not found")
+
+@app.put('/failures/{name}', response_model=Failure)
+def update_failure(name: str, updated_failure: Failure):
+    failure = database.failures.find_one({"name": name})
+    if failure:
+        failure.status = updated_failure.status
+        failure.repair_description = updated_failure.repair_description
+        return failure
+    raise HTTPException(status_code=404, detail="Failure not found")
+
 @app.get("/failures")
 async def get_failure(failure_id):
- failure = db.failures.find_one({'failure_id': failure_id})
+ failure = database.failures.find_one({'failure_id': failure_id})
  if failure is None:
      raise HTTPException(
      status_code=status.HTTP_404_NOT_FOUND,
@@ -33,53 +57,23 @@ async def get_failure(failure_id):
  )
  return failure
 
-@app.get('/failures', response_model=List[Failure])
+@app.get('/failures/', response_model=List[Failure])
 async def get_failures():
-    failures = await db.failures.find().to_list(length=None)
-    return failures
-
-@app.post('/failures', response_model=Failure)
-async def create_failure(failure: Failure):
-    failures.append(failure)
-    return failure
+    cursor = database.failures.find()
+    return cursor
 
 @app.get('/failures/{name}', response_model=Failure)
-async def get_failure(name: str):
-    for f in failures:
-        if f.name == name:
-            return f
-    raise HTTPException(status_code=404, detail="Failure not found")
-
-@app.put('/failures/{name}', response_model=Failure)
-async def update_failure(name: str, updated_failure: Failure):
-    for f in failures:
-        if f.name == name:
-            f.status = updated_failure.status
-            f.repair_description = updated_failure.repair_description
-            return f
+def get_failure(name: str):
+    failure = database.failures.find_one({"name": name})
+    if failure:
+        return failure
     raise HTTPException(status_code=404, detail="Failure not found")
 
 @app.delete('/failures/{name}', response_model=dict)
-def delete_failure(name: str):
+async def delete_failure(name: str):
+    failures = await database.failures.find().to_list(length=None)
     for f in failures:
         if f.name == name:
             failures.remove(f)
             return {"message": "Failure deleted successfully"}
     raise HTTPException(status_code=404, detail="Failure not found")
-
-@app.post("/auto")
-async def modify(id, failure: Failure):
-    db = get_connection_to_document_database()
-    car_query = {"id": id}
-    car_values = {"$set": {
-    "id": car.id,
-    "name": car.name,
-    "mark": car.mark,
-    "production_year": car.production_year,
-    "price": car.price
-    }}
-    db.offers.update_one(car_query, car_values)
-    return car
-
-
-

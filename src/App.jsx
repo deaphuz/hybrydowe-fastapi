@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
 import Report from './Report.js';
+import axios from 'axios'; 
+
 
 function App() {
     const [failures, setFailures] = useState([]);
@@ -14,20 +16,57 @@ function App() {
     });
 
     useEffect(() => {
-        // Mockowy przyk³ad danych
-        const mockData = [
-            {
-                failureType: 'High',
-                name: 'Komputer stacjonarny',
-                date: '2024-04-05',
-                potentialPrice: '100',
-                potentialDate: '2024-04-10',
-                status: 'NEW',
-                repairDescription: 'Testowy opis'
-            },
-        ];
-        setFailures(mockData);
+        fetchFailures();
     }, []);
+
+    const fetchFailures = async () => {
+        try {
+            const response = await axios.get('http://localhost:8000/failures/');
+            setFailures(response.data);
+        } catch (error) {
+            console.error('Error fetching failures:', error);
+        }
+    };
+
+    const addFailure = async () => {
+
+        if (newFailure.name.trim().length < 3 || newFailure.failureType.trim().length < 3) {
+            alert("Nazwa urzadzenia i rodzaj awarii musza zawierac co najmniej 3 znaki.");
+            return;
+        }
+
+        if (isNaN(newFailure.potentialPrice) || newFailure.potentialPrice <= 0) {
+            alert("Szacowany koszt musi byc liczba wieksza niz 0.");
+            return;
+        }
+
+        const potentialDate = new Date(newFailure.potentialDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (potentialDate <= today) {
+            alert("Szacowana data musi byc pozniejsza niz dzisiejsza data.");
+            return;
+        }
+
+
+        const newFailureEntry = { ...newFailure, date: new Date().toISOString().slice(0, 10) };
+        console.log(newFailureEntry);
+        setFailures([...failures, newFailureEntry]);
+
+        try {
+            await axios.post('http://localhost:8000/failures/', newFailure);
+            setNewFailure({
+                name: '',
+                potentialPrice: '',
+                potentialDate: '',
+                status: 'NEW',
+                repairDescription: ''
+            });
+            fetchFailures();
+        } catch (error) {
+            console.error('Error adding failure:', error);
+        }
+    };
 
     const handleInputChange = event => {
         const { name, value } = event.target;
@@ -82,40 +121,6 @@ function App() {
 
         setFailures(failures.map((item, indexx) => indexx === index ? { ...item, potentialPrice: newPrice } : item));
     }
-
-    const addFailure = () => {
-
-        if (newFailure.name.trim().length < 3 || newFailure.failureType.trim().length < 3) {
-            alert("Nazwa urzadzenia i rodzaj awarii musza zawierac co najmniej 3 znaki.");
-            return;
-        }
-
-        if (isNaN(newFailure.potentialPrice) || newFailure.potentialPrice <= 0) {
-            alert("Szacowany koszt musi byc liczba wieksza niz 0.");
-            return;
-        }
-
-        const potentialDate = new Date(newFailure.potentialDate);
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        if (potentialDate <= today) {
-            alert("Szacowana data musi byc pozniejsza niz dzisiejsza data.");
-            return;
-        }
-
-
-        const newFailureEntry = { ...newFailure, date: new Date().toISOString().slice(0, 10) };
-        console.log(newFailureEntry);
-        setFailures([...failures, newFailureEntry]);
-        setNewFailure({
-            name: '',
-            potentialPrice: '',
-            potentialDate: '',
-            status: 'NEW',
-            repairDescription: ''
-        });
-    };
-
 
     return (
         <div className="App">
